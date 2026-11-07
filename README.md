@@ -43,7 +43,15 @@ macOS 26, the same WhatsApp account freshly logged in to all three apps and left
 | Ferdium | 1,140 MB | 671 MB (Chromium) | about 470 MB |
 | rustium 0.1.0 | 1,408 MB | 1,217 MB (WebKit) | about 190 MB |
 
-The Rust shell saves about 280 MB because it ships no browser engine of its own. But WebKit needs about 1.8 times as much memory as Chromium for the same WhatsApp Web page, so on macOS rustium ends up about 270 MB heavier than Ferdium. A Windows measurement (where WebView2 is Chromium) is still to come; `scripts/measure-memory.ps1` measures all three apps there.
+The Rust shell saves about 280 MB because it ships no browser engine of its own. But WebKit needs about 1.8 times as much memory as Chromium for the same WhatsApp Web page, so on macOS rustium ends up about 270 MB heavier than Ferdium. On Windows the picture flips. Windows 10 (AtlasOS), the same WhatsApp account, memory as Task Manager counts it (private working set), measured with `scripts/measure-memory.ps1`:
+
+| App | Total | WhatsApp page | The app itself |
+|---|---|---|---|
+| WhatsApp (official app, also WebView2-based) | 205 MB | 92 MB | about 110 MB |
+| Ferdium | 1,141 MB | 579 MB (Electron's Chromium) | about 560 MB |
+| rustium 0.1.0 | 680 MB | 433 MB (WebView2) | about 250 MB |
+
+Here both use a Chromium engine, so the lighter shell shows: rustium uses about 40% less memory than Ferdium. Windows lowers the working set of minimized windows, so compare the apps in the same window state.
 
 ## Build from source
 
