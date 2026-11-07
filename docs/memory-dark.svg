@@ -1,11 +1,13 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="880" height="392" viewBox="0 0 880 392" role="img" aria-labelledby="t d">
 <title id="t">Memory with one WhatsApp account</title>
-<desc id="d">macOS 26: WhatsApp app 215 MB, Ferdium 1,140 MB, rustium 1,408 MB. Windows 10: WhatsApp app 205 MB, Ferdium 1,141 MB, rustium 680 MB. Lower is better.</desc>
+<desc id="d">macOS 26 on a MacBook Pro (M1 Pro, 16 GB): WhatsApp app 215 MB, Ferdium 1,140 MB, rustium 1,408 MB. Windows 10 on a Dell Latitude 5490 (Core i5-8350U, 16 GB): WhatsApp app 205 MB, Ferdium 1,141 MB, rustium 680 MB. Lower is better.</desc>
 <style>
 text { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; }
 .title { font-size: 18px; font-weight: 600; fill: #f0efec; }
 .sub { font-size: 13px; fill: #c3c2b7; }
 .panel { font-size: 14px; font-weight: 600; fill: #f0efec; }
+.panel, .hw { stroke: #1a1a19; stroke-width: 4px; paint-order: stroke; }
+.hw { font-weight: 400; fill: #898781; }
 .label { font-size: 13px; fill: #c3c2b7; }
 .value { font-size: 13px; font-weight: 600; fill: #f0efec; font-variant-numeric: tabular-nums; }
 .tick { font-size: 11px; fill: #898781; font-variant-numeric: tabular-nums; }
@@ -21,7 +23,7 @@ text { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; }
 <text x="776.0" y="376" class="tick" text-anchor="middle">1,500 MB</text>
 <line x1="176" y1="96" x2="176" y2="358" stroke="#383835" stroke-width="1"/>
 <text x="176" y="376" class="tick" text-anchor="middle">0</text>
-<text x="24" y="88" class="panel">macOS 26</text>
+<text x="24" y="88" class="panel">macOS 26<tspan class="hw"> · MacBook Pro, M1 Pro, 16 GB</tspan></text>
 <text x="164" y="116.0" class="label" text-anchor="end">WhatsApp app</text>
 <path d="M176 100h82a4 4 0 0 1 4 4v14a4 4 0 0 1 -4 4h-82z" fill="#6f6d68"><title>macOS 26, WhatsApp app: 215 MB</title></path>
 <text x="270" y="116.0" class="value">215 MB</text>
@@ -31,7 +33,7 @@ text { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; }
 <text x="164" y="184.0" class="label" text-anchor="end">rustium</text>
 <path d="M176 168h559a4 4 0 0 1 4 4v14a4 4 0 0 1 -4 4h-559z" fill="#d95926"><title>macOS 26, rustium: 1,408 MB</title></path>
 <text x="747" y="184.0" class="value">1,408 MB</text>
-<text x="24" y="238" class="panel">Windows 10</text>
+<text x="24" y="238" class="panel">Windows 10<tspan class="hw"> · AtlasOS, Dell Latitude 5490, Core i5-8350U, 16 GB DDR4</tspan></text>
 <text x="164" y="266.0" class="label" text-anchor="end">WhatsApp app</text>
 <path d="M176 250h78a4 4 0 0 1 4 4v14a4 4 0 0 1 -4 4h-78z" fill="#6f6d68"><title>Windows 10, WhatsApp app: 205 MB</title></path>
 <text x="266" y="266.0" class="value">205 MB</text>

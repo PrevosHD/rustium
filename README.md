@@ -21,6 +21,13 @@ A proof-of-concept remake of [Ferdium](https://github.com/ferdium/ferdium-app), 
 >
 > Issues are welcome, and I may look into them, but only in my spare time. There is no guarantee of a reply or a fix.
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/illustration-dark.png">
+  <img src="docs/illustration-light.png" alt="Illustration of the rustium window: a sidebar with three services (Private with 3 unread, Business, Team with 5 unread) next to a generic example chat app.">
+</picture>
+
+<sub>Illustration with a generic example chat app and made-up messages. In real use, WhatsApp Web or another web app fills the area next to the sidebar.</sub>
+
 ## The experiment
 
 Ferdium bundles web messengers into one window, but as an Electron app it ships its own copy of Chromium. With several WhatsApp accounts that adds up to gigabytes of memory.
@@ -35,7 +42,7 @@ rustium asks a simple question: **does a Rust shell on the system's own web engi
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/memory-dark.svg">
-  <img src="docs/memory-light.svg" alt="Memory with one WhatsApp account. macOS 26: WhatsApp app 215 MB, Ferdium 1,140 MB, rustium 1,408 MB. Windows 10: WhatsApp app 205 MB, Ferdium 1,141 MB, rustium 680 MB.">
+  <img src="docs/memory-light.svg" alt="Memory with one WhatsApp account. macOS 26 on a MacBook Pro (M1 Pro, 16 GB): WhatsApp app 215 MB, Ferdium 1,140 MB, rustium 1,408 MB. Windows 10 on a Dell Latitude 5490 (Core i5-8350U, 16 GB): WhatsApp app 205 MB, Ferdium 1,141 MB, rustium 680 MB.">
 </picture>
 
 | | Windows 10 | macOS 26 |
@@ -50,7 +57,7 @@ The official WhatsApp apps stay the lightest on both systems, at about 200 MB.
 
 The same WhatsApp account was freshly logged in to all three apps, which were then left idle for a few minutes.
 
-**macOS 26**, physical footprint as Activity Monitor counts it, summed over each app's processes:
+**macOS 26** on a MacBook Pro (M1 Pro, 16 GB), physical footprint as Activity Monitor counts it, summed over each app's processes:
 
 | App | Total | WhatsApp page | The app itself |
 |---|---|---|---|
@@ -58,7 +65,7 @@ The same WhatsApp account was freshly logged in to all three apps, which were th
 | Ferdium | 1,140 MB | 671 MB (Chromium) | about 470 MB |
 | rustium 0.1.0 | 1,408 MB | 1,217 MB (WebKit) | about 190 MB |
 
-**Windows 10 (AtlasOS)**, private working set as Task Manager counts it, measured with [`scripts/measure-memory.ps1`](scripts/measure-memory.ps1):
+**Windows 10 (AtlasOS)** on a Dell Latitude 5490 (Intel Core i5-8350U, 16 GB DDR4), private working set as Task Manager counts it, measured with [`scripts/measure-memory.ps1`](scripts/measure-memory.ps1):
 
 | App | Total | WhatsApp page | The app itself |
 |---|---|---|---|
@@ -70,14 +77,14 @@ Windows lowers the working set of minimized windows, so compare the apps in the 
 
 </details>
 
-## Screenshot
+## The service manager
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/screenshot-services-dark.png">
   <img src="docs/screenshot-services-light.png" width="720" alt="rustium's service manager: a sidebar with the services Private (3 unread), Business (12 unread) and Team, next to a form to add a service by name and URL and a list with a Remove button per service.">
 </picture>
 
-The service manager, rendered from the app's own UI with sample services. In normal use the web app fills the area to the right of the sidebar.
+Click **+** in the sidebar to add or remove services. Rendered from the app's own UI with sample services.
 
 ## Features
 
