@@ -6,6 +6,8 @@ rustium is a proof-of-concept remake of [Ferdium](https://github.com/ferdium/fer
 
 The experiment: can a Rust shell on the system webview (WKWebView on macOS, WebView2 on Windows, WebKitGTK on Linux) run several WhatsApp Web accounts, all active so notifications keep arriving, with less memory than Electron-based Ferdium? The web apps themselves still use most of the memory, and WebView2 on Windows is based on Chromium, so the shell alone can only save part of it.
 
+rustium was built with WhatsApp Web in mind, but it can show any application that has a web app: a service is just a name and an `https://` URL. Unread badges work for pages that put the count in their title (like `(3) WhatsApp`), and notifications for pages that use the standard Web Notification API.
+
 ## Features
 
 - Each service is a name and a URL, shown in its own isolated webview with separate cookies and storage. Several accounts of the same messenger can be logged in at once.
