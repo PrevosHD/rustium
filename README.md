@@ -42,7 +42,7 @@ rustium asks a simple question: **does a Rust shell on the system's own web engi
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/memory-dark.svg">
-  <img src="docs/memory-light.svg" alt="Memory with one WhatsApp account. macOS 26 on a MacBook Pro (M1 Pro, 16 GB): WhatsApp app 215 MB, Ferdium 1,140 MB, rustium 1,408 MB. Windows 10 on a Dell Latitude 5490 (Core i5-8350U, 16 GB): WhatsApp app 205 MB, Ferdium 1,141 MB, rustium 680 MB.">
+  <img src="docs/memory-light.svg" alt="Memory with one WhatsApp account. macOS 26 on a MacBook Pro (M1 Pro, 16 GB): WhatsApp app 215 MB, Ferdium 1,140 MB, rustium 1,408 MB. Windows 10 on a Dell Latitude 5490 (Core i5-8350U, 16 GB): Ferdium 1,141 MB, rustium 680 MB; WhatsApp app not measured yet.">
 </picture>
 
 | | Windows 10 | macOS 26 |
@@ -50,7 +50,7 @@ rustium asks a simple question: **does a Rust shell on the system's own web engi
 | **rustium vs. Ferdium** | **about 40% less** (680 vs. 1,141 MB) | about 25% more (1,408 vs. 1,140 MB) |
 | **Why** | Both run WhatsApp Web on Chromium, so rustium's lighter shell wins. | Apple's WebKit needs about 1.8 times as much memory as Chromium for WhatsApp Web, more than the shell saves. |
 
-The official WhatsApp apps stay the lightest on both systems, at about 200 MB.
+On macOS the official WhatsApp app is by far the lightest, at 215 MB. The Windows app still has to be measured while logged in.
 
 <details>
 <summary>How it was measured, with the full numbers</summary>
@@ -69,7 +69,7 @@ The same WhatsApp account was freshly logged in to all three apps, which were th
 
 | App | Total | WhatsApp page | The app itself |
 |---|---|---|---|
-| WhatsApp (official app, WebView2-based) | 205 MB | 92 MB | about 110 MB |
+| WhatsApp (official app) | not measured yet: it was not logged in during this run | | |
 | Ferdium | 1,141 MB | 579 MB (Electron's Chromium) | about 560 MB |
 | rustium 0.1.0 | 680 MB | 433 MB (WebView2) | about 250 MB |
 
