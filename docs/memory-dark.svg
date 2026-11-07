@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="880" height="392" viewBox="0 0 880 392" role="img" aria-labelledby="t d">
 <title id="t">Memory with one WhatsApp account</title>
-<desc id="d">macOS 26 on MacBook Pro, M1 Pro, 16 GB: WhatsApp app 215 MB, Ferdium 1,140 MB, rustium 1,408 MB; Windows 10 on AtlasOS, Dell Latitude 5490, Core i5-8350U, 16 GB DDR4: WhatsApp app not measured yet, Ferdium 1,141 MB, rustium 680 MB. Lower is better.</desc>
+<desc id="d">macOS 26 on MacBook Pro, M1 Pro, 16 GB: WhatsApp app 215 MB, Ferdium 1,140 MB, rustium 1,408 MB; Windows 10 on AtlasOS, Dell Latitude 5490, Core i5-8350U, 16 GB DDR4: WhatsApp app 935 MB, Ferdium 1,141 MB, rustium 680 MB. Lower is better.</desc>
 <style>
 text { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; }
 .title { font-size: 18px; font-weight: 600; fill: #f0efec; }
@@ -15,14 +15,14 @@ text { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; }
 <rect width="880" height="392" rx="12" fill="#1a1a19"/>
 <text x="24" y="36" class="title">Memory with one WhatsApp account</text>
 <text x="24" y="58" class="sub">Lower is better. macOS: physical footprint (Activity Monitor). Windows: private working set (Task Manager).</text>
+<line x1="176" y1="96" x2="176" y2="358" stroke="#383835" stroke-width="1"/>
+<text x="176" y="376" class="tick" text-anchor="middle">0</text>
 <line x1="376.0" y1="96" x2="376.0" y2="358" stroke="#2c2c2a" stroke-width="1"/>
 <text x="376.0" y="376" class="tick" text-anchor="middle">500 MB</text>
 <line x1="576.0" y1="96" x2="576.0" y2="358" stroke="#2c2c2a" stroke-width="1"/>
 <text x="576.0" y="376" class="tick" text-anchor="middle">1,000 MB</text>
 <line x1="776.0" y1="96" x2="776.0" y2="358" stroke="#2c2c2a" stroke-width="1"/>
 <text x="776.0" y="376" class="tick" text-anchor="middle">1,500 MB</text>
-<line x1="176" y1="96" x2="176" y2="358" stroke="#383835" stroke-width="1"/>
-<text x="176" y="376" class="tick" text-anchor="middle">0</text>
 <text x="24" y="88" class="panel">macOS 26<tspan class="hw"> · MacBook Pro, M1 Pro, 16 GB</tspan></text>
 <text x="164" y="116.0" class="label" text-anchor="end">WhatsApp app</text>
 <path d="M176 100h82a4 4 0 0 1 4 4v14a4 4 0 0 1 -4 4h-82z" fill="#6f6d68"><title>macOS 26, WhatsApp app: 215 MB</title></path>
@@ -35,7 +35,8 @@ text { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; }
 <text x="747" y="184.0" class="value">1,408 MB</text>
 <text x="24" y="238" class="panel">Windows 10<tspan class="hw"> · AtlasOS, Dell Latitude 5490, Core i5-8350U, 16 GB DDR4</tspan></text>
 <text x="164" y="266.0" class="label" text-anchor="end">WhatsApp app</text>
-<text x="184" y="266.0" class="note">not measured yet (was not logged in)</text>
+<path d="M176 250h370a4 4 0 0 1 4 4v14a4 4 0 0 1 -4 4h-370z" fill="#6f6d68"><title>Windows 10, WhatsApp app: 935 MB</title></path>
+<text x="558" y="266.0" class="value">935 MB</text>
 <text x="164" y="300.0" class="label" text-anchor="end">Ferdium</text>
 <path d="M176 284h452a4 4 0 0 1 4 4v14a4 4 0 0 1 -4 4h-452z" fill="#6f6d68"><title>Windows 10, Ferdium: 1,141 MB</title></path>
 <text x="640" y="300.0" class="value">1,141 MB</text>

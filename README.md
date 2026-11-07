@@ -42,15 +42,16 @@ rustium asks a simple question: **does a Rust shell on the system's own web engi
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/memory-dark.svg">
-  <img src="docs/memory-light.svg" alt="Memory with one WhatsApp account. macOS 26 on a MacBook Pro (M1 Pro, 16 GB): WhatsApp app 215 MB, Ferdium 1,140 MB, rustium 1,408 MB. Windows 10 on a Dell Latitude 5490 (Core i5-8350U, 16 GB): Ferdium 1,141 MB, rustium 680 MB; WhatsApp app not measured yet.">
+  <img src="docs/memory-light.svg" alt="Memory with one WhatsApp account. macOS 26 on a MacBook Pro (M1 Pro, 16 GB): WhatsApp app 215 MB, Ferdium 1,140 MB, rustium 1,408 MB. Windows 10 on a Dell Latitude 5490 (Core i5-8350U, 16 GB): WhatsApp app 935 MB, Ferdium 1,141 MB, rustium 680 MB.">
 </picture>
 
 | | Windows 10 | macOS 26 |
 |---|---|---|
 | **rustium vs. Ferdium** | **about 40% less** (680 vs. 1,141 MB) | about 25% more (1,408 vs. 1,140 MB) |
-| **Why** | Both run WhatsApp Web on Chromium, so rustium's lighter shell wins. | Apple's WebKit needs about 1.8 times as much memory as Chromium for WhatsApp Web, more than the shell saves. |
+| **rustium vs. the official WhatsApp app** | **about 27% less** (680 vs. 935 MB) | about 6.5 times as much (1,408 vs. 215 MB) |
+| **Why** | All three run WhatsApp Web on Chromium (the official app uses WebView2 too), so rustium's lighter shell wins. | Apple's WebKit needs about 1.8 times as much memory as Chromium for WhatsApp Web, and the official app is native, with no web page at all. |
 
-On macOS the official WhatsApp app is by far the lightest, at 215 MB. The Windows app still has to be measured while logged in.
+So on Windows rustium is the lightest of the three. On macOS the native WhatsApp app wins by far.
 
 <details>
 <summary>How it was measured, with the full numbers</summary>
@@ -69,11 +70,11 @@ The same WhatsApp account was freshly logged in to all three apps, which were th
 
 | App | Total | WhatsApp page | The app itself |
 |---|---|---|---|
-| WhatsApp (official app) | not measured yet: it was not logged in during this run | | |
+| WhatsApp (official app, WebView2-based) | 935 MB | 631 MB (WebView2) | about 300 MB |
 | Ferdium | 1,141 MB | 579 MB (Electron's Chromium) | about 560 MB |
 | rustium 0.1.0 | 680 MB | 433 MB (WebView2) | about 250 MB |
 
-Windows lowers the working set of minimized windows, so compare the apps in the same window state.
+The WhatsApp app was measured in a second run, because it was not logged in during the first one. Windows lowers the working set of minimized windows, so compare the apps in the same window state.
 
 </details>
 
