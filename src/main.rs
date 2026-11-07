@@ -29,7 +29,23 @@ const DEFAULT_URL: &str = "https://web.whatsapp.com";
 const INJECT: &str = include_str!("inject.js");
 // WhatsApp Web rejects the bare WKWebView/WebKitGTK user agent, so present as Safari.
 #[cfg(not(windows))]
-const USER_AGENT: &str = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0 Safari/605.1.15";
+fn user_agent() -> String {
+    // On macOS claim the installed Safari's version: WhatsApp turns features such as calls on or off per version.
+    #[cfg(target_os = "macos")]
+    let plist = fs::read_to_string("/Applications/Safari.app/Contents/Info.plist").unwrap_or_default();
+    #[cfg(not(target_os = "macos"))]
+    let plist = String::new();
+    let version = safari_version(&plist).unwrap_or("26.0");
+    format!("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/{version} Safari/605.1.15")
+}
+
+/// `CFBundleShortVersionString` from an XML Info.plist, if it is a plain version number.
+#[cfg(not(windows))]
+fn safari_version(plist: &str) -> Option<&str> {
+    let rest = plist.split("<key>CFBundleShortVersionString</key>").nth(1)?;
+    let version = rest.split("<string>").nth(1)?.split("</string>").next()?;
+    (!version.is_empty() && version.chars().all(|c| c.is_ascii_digit() || c == '.')).then_some(version)
+}
 
 #[derive(Clone, Serialize, Deserialize)]
 struct Service {
@@ -194,7 +210,7 @@ fn open_service(window: &Window, service: &Service) -> tauri::Result<Webview> {
     #[cfg(not(target_os = "macos"))]
     let builder = builder.data_directory(services_dir(window.app_handle())?.join(&service.id));
     #[cfg(not(windows))]
-    let builder = builder.user_agent(USER_AGENT);
+    let builder = builder.user_agent(&user_agent());
 
     let webview = window.add_child(builder, LogicalPosition::new(SIDEBAR_WIDTH, 0.0), LogicalSize::new(1.0, 1.0))?;
     webview.hide()?;
@@ -456,6 +472,16 @@ fn main() {
 #[cfg(test)]
 mod tests {
     use super::unread_count;
+
+    #[cfg(not(windows))]
+    #[test]
+    fn reads_safari_version_from_plist() {
+        use super::safari_version;
+        let plist = "<key>CFBundleShortVersionString</key>\n\t<string>26.6</string>";
+        assert_eq!(safari_version(plist), Some("26.6"));
+        assert_eq!(safari_version(""), None);
+        assert_eq!(safari_version("<key>CFBundleShortVersionString</key><string>26 beta</string>"), None);
+    }
 
     #[test]
     fn parses_unread_count_from_title() {

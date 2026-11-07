@@ -93,6 +93,7 @@ Click **+** in the sidebar to add or remove services. Rendered from the app's ow
 - **Unread badges.** The sidebar shows unread counts, read from the page title (for example `(3) WhatsApp`).
 - **Native notifications.** Web notifications become OS notifications, prefixed with the service name.
 - **Always on.** Hidden services stay loaded and keep receiving messages. Closing the window keeps rustium running in the tray.
+- **Voice messages and calls.** Microphone and camera work for the service's own site. macOS asks once for permission the first time a page uses them.
 - **Downloads and drag and drop.** Files save to your Downloads folder, and you can drag files into a chat.
 - **Locked down.** Web pages can only send notifications to the app, nothing else.
 
@@ -120,7 +121,8 @@ Services are saved in `services.json` in the app's config directory.
 
 ## Known limits
 
-- **No microphone or camera.** Voice messages and taking photos do not work yet. WhatsApp Web also shows a banner recommending another browser, because rustium presents itself as Safari. Click OK to hide it.
+- **Permission prompts after updates.** The builds are not signed, so macOS may ask again for microphone and camera access after each update. To reset a stuck permission: `tccutil reset Microphone io.github.prevoshd.rustium` (or `Camera`).
+- **Browser banner.** WhatsApp Web may show a banner recommending another browser, because rustium presents itself as Safari. Click OK to hide it.
 - **Notification clicks** do not focus the window or switch to the service yet.
 - **Linux layout is broken.** Child webviews ignore their position there, so the sidebar does not get its fixed width.
 - **Windows:** each service gets its own WebView2 browser process, because Tauri does not expose WebView2 profiles yet. Several accounts therefore cost more than they would with shared profiles.
