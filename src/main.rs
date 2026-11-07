@@ -281,6 +281,41 @@ fn on_title(webview: &Webview, title: &str) {
     }
 }
 
+/// Asks macOS for microphone and camera access once, at the first start, so voice messages
+/// and calls work right away instead of failing while the system prompt is open.
+#[cfg(target_os = "macos")]
+#[allow(unsafe_code)]
+fn request_media_access() {
+    use objc2::{class, msg_send, rc::Retained, runtime::{AnyObject, Bool}};
+    use objc2_foundation::NSString;
+
+    #[link(name = "AVFoundation", kind = "framework")]
+    unsafe extern "C" {
+        static AVMediaTypeAudio: &'static NSString;
+        static AVMediaTypeVideo: &'static NSString;
+    }
+
+    // SAFETY: plain Objective-C calls on class objects with the argument types Apple documents.
+    unsafe {
+        for (media, key, what) in [
+            (AVMediaTypeAudio, "NSMicrophoneUsageDescription", "microphone"),
+            (AVMediaTypeVideo, "NSCameraUsageDescription", "camera"),
+        ] {
+            // Without the usage text (e.g. `cargo run` outside the .app) the request would crash the app.
+            let bundle: Retained<AnyObject> = msg_send![class!(NSBundle), mainBundle];
+            let text: Option<Retained<AnyObject>> = msg_send![&*bundle, objectForInfoDictionaryKey: &*NSString::from_str(key)];
+            // 0 = not asked yet; macOS shows its prompt only then.
+            let status: isize = msg_send![class!(AVCaptureDevice), authorizationStatusForMediaType: media];
+            eprintln!("rustium: {what} access status {status} (0 not asked, 2 denied, 3 allowed), usage text: {}", text.is_some());
+            if text.is_none() || status != 0 {
+                continue;
+            }
+            let done = block2::RcBlock::new(move |granted: Bool| eprintln!("rustium: {what} access granted: {}", granted.as_bool()));
+            let () = msg_send![class!(AVCaptureDevice), requestAccessForMediaType: media, completionHandler: &*done];
+        }
+    }
+}
+
 fn show_main(app: &AppHandle) {
     if let Some(window) = app.get_window("main") {
         let _ = window.show();
@@ -392,6 +427,8 @@ fn setup(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
         st.services.clone_from(&services);
     }
     purge_orphans(&handle);
+    #[cfg(target_os = "macos")]
+    request_media_access();
 
     let window = tauri::window::WindowBuilder::new(app, "main")
         .title("rustium")
