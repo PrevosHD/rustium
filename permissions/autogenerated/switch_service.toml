@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-switch-service"
+description = "Enables the switch_service command without any pre-configured scope."
+commands.allow = ["switch_service"]
+
+[[permission]]
+identifier = "deny-switch-service"
+description = "Denies the switch_service command without any pre-configured scope."
+commands.deny = ["switch_service"]

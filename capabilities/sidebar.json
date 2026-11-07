@@ -1,0 +1,6 @@
+{
+  "identifier": "sidebar",
+  "description": "Local sidebar UI manages services.",
+  "webviews": ["sidebar"],
+  "permissions": ["allow-list-services", "allow-add-service", "allow-remove-service", "allow-switch-service", "allow-set-panel"]
+}

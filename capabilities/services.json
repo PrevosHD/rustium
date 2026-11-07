@@ -1,0 +1,7 @@
+{
+  "identifier": "services",
+  "description": "Remote service pages may only send notifications.",
+  "webviews": ["svc-*"],
+  "remote": { "urls": ["https://*"] },
+  "permissions": ["allow-notify"]
+}

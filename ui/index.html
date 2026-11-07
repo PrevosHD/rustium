@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>rustium</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #1e1f22; --fg: #e8e8e8; --muted: #9aa0a6; --tile: #2b2d31; --tile-active: #404249;
+    --accent: #f97316; --badge: #e5383b; --danger: #e5383b; --field: #111214;
+  }
+  @media (prefers-color-scheme: light) {
+    :root { --bg: #f2f3f5; --fg: #1e1f22; --muted: #5f6368; --tile: #e3e5e8; --tile-active: #c9ccd1; --field: #fff; }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: var(--bg); color: var(--fg);
+    font: 13px -apple-system, "Segoe UI", system-ui, sans-serif; }
+  button { font: inherit; color: inherit; cursor: pointer; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  #bar { position: fixed; inset: 0 auto 0 0; width: 68px; display: flex; flex-direction: column;
+    align-items: center; gap: 10px; padding: 14px 0; user-select: none; }
+  #services { display: contents; }
+  .svc { position: relative; width: 44px; height: 44px; border: 0; border-radius: 12px; background: var(--tile);
+    font-weight: 600; text-transform: uppercase; }
+  .svc[aria-current="page"] { background: var(--tile-active); box-shadow: inset 3px 0 0 var(--accent); }
+  .badge { position: absolute; top: -5px; right: -5px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px;
+    background: var(--badge); color: #fff; font-size: 11px; line-height: 18px; }
+  #manage { margin-top: auto; width: 44px; height: 44px; border: 0; border-radius: 12px; background: transparent;
+    font-size: 22px; color: var(--muted); }
+  #panel { display: none; position: fixed; inset: 0 0 0 68px; padding: 28px 32px; overflow: auto; max-width: 640px; }
+  body.panel #panel { display: block; }
+  h1 { margin: 0 0 20px; font-size: 20px; }
+  form { display: grid; gap: 10px; margin-bottom: 28px; }
+  label { display: grid; gap: 4px; color: var(--muted); }
+  input { padding: 8px 10px; border: 1px solid var(--tile-active); border-radius: 8px; background: var(--field); color: var(--fg); font: inherit; }
+  .primary { justify-self: start; padding: 8px 16px; border: 0; border-radius: 8px; background: var(--accent); color: #fff; font-weight: 600; }
+  #error { margin: 0; min-height: 1em; color: var(--danger); }
+  ul { list-style: none; margin: 0 0 24px; padding: 0; }
+  li { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-top: 1px solid var(--tile); }
+  li span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  li small { color: var(--muted); }
+  .remove { padding: 6px 12px; border: 1px solid var(--danger); border-radius: 8px; background: transparent; color: var(--danger); }
+  .secondary { padding: 8px 16px; border: 1px solid var(--tile-active); border-radius: 8px; background: transparent; }
+</style>
+</head>
+<body>
+<nav id="bar" aria-label="Services">
+  <div id="services"></div>
+  <button id="manage" type="button" title="Manage services" aria-label="Manage services">+</button>
+</nav>
+
+<section id="panel" aria-labelledby="panel-title">
+  <h1 id="panel-title">Services</h1>
+  <form id="add">
+    <label>Name <input name="name" required maxlength="40" placeholder="WhatsApp Business"></label>
+    <label>URL <input name="url" type="url" required value="https://web.whatsapp.com"></label>
+    <button class="primary" type="submit">Add service</button>
+    <p id="error" role="alert"></p>
+  </form>
+  <ul id="list"></ul>
+  <button class="secondary" id="close" type="button">Done</button>
+</section>
+
+<script>
+  const invoke = (cmd, args) => window.__TAURI_INTERNALS__.invoke(cmd, args);
+  const $ = (id) => document.getElementById(id);
+  const make = (tag, props = {}, children = []) => {
+    const node = Object.assign(document.createElement(tag), props);
+    node.append(...children);
+    return node;
+  };
+  const showError = (e) => { $('error').textContent = String(e); };
+
+  // Called by Rust (webview.eval) whenever services, unread counts or the active service change.
+  function render(state) {
+    document.body.classList.toggle('panel', state.panel);
+    $('services').replaceChildren(...state.services.map((s) => {
+      const label = s.unread ? `${s.name}, ${s.unread} unread` : s.name;
+      const button = make('button', { className: 'svc', type: 'button', title: s.name, textContent: s.name.slice(0, 2) });
+      button.setAttribute('aria-label', label);
+      if (s.id === state.active && !state.panel) button.setAttribute('aria-current', 'page');
+      if (s.unread) button.append(make('span', { className: 'badge', textContent: s.unread > 99 ? '99+' : s.unread }));
+      button.onclick = () => invoke('switch_service', { id: s.id }).catch(showError);
+      return button;
+    }));
+    $('list').replaceChildren(...state.services.map((s) => {
+      const remove = make('button', { className: 'remove', type: 'button', textContent: 'Remove' });
+      remove.onclick = () => {
+        if (remove.dataset.armed) return invoke('remove_service', { id: s.id }).catch(showError);
+        remove.dataset.armed = '1';
+        remove.textContent = 'Really remove and log out?';
+      };
+      return make('li', {}, [make('span', {}, [make('strong', { textContent: s.name }), make('br'), make('small', { textContent: s.url })]), remove]);
+    }));
+  }
+
+  $('manage').onclick = () => invoke('set_panel', { open: true }).catch(showError);
+  $('close').onclick = () => invoke('set_panel', { open: false }).catch(showError);
+  $('add').onsubmit = (event) => {
+    event.preventDefault();
+    const form = new FormData(event.target);
+    showError('');
+    invoke('add_service', { name: form.get('name'), url: form.get('url') })
+      .then(() => { event.target.elements.name.value = ''; })
+      .catch(showError);
+  };
+  invoke('list_services').then(render).catch(showError);
+</script>
+</body>
+</html>
