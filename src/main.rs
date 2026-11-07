@@ -4,6 +4,7 @@
 use std::{
     collections::HashMap,
     fs,
+    io::{ErrorKind, Write},
     path::PathBuf,
     sync::Mutex,
     time::{SystemTime, UNIX_EPOCH},
@@ -51,12 +52,12 @@ fn label(id: &str) -> String {
     format!("svc-{id}")
 }
 
-/// Unread count from a page title such as `(3) WhatsApp` or `Inbox (12) - Gmail`.
+/// Unread count from a page title such as `(3) WhatsApp`, `Inbox (1,234) - Gmail` or `(99+) Chat`.
 fn unread_count(title: &str) -> u32 {
     title
         .split('(')
         .skip(1)
-        .find_map(|part| part.split_once(')')?.0.trim().parse().ok())
+        .find_map(|part| part.split_once(')')?.0.trim().trim_end_matches('+').replace(',', "").parse().ok())
         .unwrap_or(0)
 }
 
@@ -71,8 +72,16 @@ fn store_path(app: &AppHandle) -> tauri::Result<PathBuf> {
 
 fn load(app: &AppHandle) -> tauri::Result<Vec<Service>> {
     let path = store_path(app)?;
-    let Ok(text) = fs::read_to_string(&path) else {
-        return Ok(vec![Service { id: new_id(), name: "WhatsApp".into(), url: DEFAULT_URL.into() }]);
+    let text = match fs::read_to_string(&path) {
+        Ok(text) => text,
+        Err(e) if e.kind() == ErrorKind::NotFound => {
+            // Save the first service right away: its id names its login storage, so it must survive a restart.
+            let services = vec![Service { id: new_id(), name: "WhatsApp".into(), url: DEFAULT_URL.into() }];
+            save(app, &services).map_err(std::io::Error::other)?;
+            return Ok(services);
+        }
+        // Any other read error stops the start instead of risking an overwrite of the real list.
+        Err(e) => return Err(e.into()),
     };
     match serde_json::from_str(&text) {
         Ok(services) => Ok(services),
@@ -89,10 +98,55 @@ fn save(app: &AppHandle, services: &[Service]) -> Result<(), String> {
     let path = store_path(app).map_err(|e| e.to_string())?;
     let tmp = path.with_extension("json.tmp");
     let json = serde_json::to_string_pretty(services).map_err(|e| e.to_string())?;
-    fs::create_dir_all(path.parent().unwrap_or(&path))
-        .and_then(|()| fs::write(&tmp, json))
-        .and_then(|()| fs::rename(&tmp, &path))
-        .map_err(|e| format!("could not save {}: {e}", path.display()))
+    let write = || -> std::io::Result<()> {
+        fs::create_dir_all(path.parent().unwrap_or(&path))?;
+        let mut file = fs::File::create(&tmp)?;
+        file.write_all(json.as_bytes())?;
+        file.sync_all()?; // so a power cut cannot leave an empty file behind the rename
+        fs::rename(&tmp, &path)
+    };
+    write().map_err(|e| format!("could not save {}: {e}", path.display()))
+}
+
+/// The macOS data store of a service; its id is a 32-digit hex number.
+#[cfg(target_os = "macos")]
+fn store_id(id: &str) -> [u8; 16] {
+    u128::from_str_radix(id, 16).unwrap_or_default().to_be_bytes()
+}
+
+#[cfg(not(target_os = "macos"))]
+fn services_dir(app: &AppHandle) -> tauri::Result<PathBuf> {
+    // Local, not roaming, AppData on Windows: browser caches must not travel with the user profile.
+    Ok(app.path().app_local_data_dir()?.join("services"))
+}
+
+/// Deletes the stored data of services that no longer exist, e.g. removed ones.
+fn purge_orphans(app: &AppHandle) {
+    let keep = |app: &AppHandle| -> Vec<String> {
+        app.state::<Mutex<AppState>>().lock().unwrap().services.iter().map(|s| s.id.clone()).collect()
+    };
+    #[cfg(target_os = "macos")]
+    {
+        let app = app.clone();
+        tauri::async_runtime::spawn(async move {
+            let Ok(stores) = app.fetch_data_store_identifiers().await else { return };
+            let keep: Vec<[u8; 16]> = keep(&app).iter().map(|id| store_id(id)).collect();
+            for store in stores.into_iter().filter(|s| !keep.contains(s)) {
+                if let Err(e) = app.remove_data_store(store).await {
+                    eprintln!("rustium: could not delete an old data store: {e}");
+                }
+            }
+        });
+    }
+    #[cfg(not(target_os = "macos"))]
+    if let Ok(entries) = services_dir(app).and_then(|dir| Ok(fs::read_dir(dir)?)) {
+        let keep = keep(app);
+        for entry in entries.flatten() {
+            if !keep.iter().any(|id| entry.file_name() == id.as_str()) {
+                let _ = fs::remove_dir_all(entry.path());
+            }
+        }
+    }
 }
 
 fn open_external(app: &AppHandle, url: &Url) {
@@ -112,6 +166,10 @@ fn open_service(window: &Window, service: &Service) -> tauri::Result<Webview> {
         // Hidden services must keep running, or their notifications stop.
         .background_throttling(BackgroundThrottlingPolicy::Disabled)
         .on_document_title_changed(|webview, title| on_title(&webview, &title))
+        // Saves downloads (photos, documents) to the Downloads folder instead of dropping them.
+        .on_download(|_, _| true)
+        // Lets files be dragged into the page, e.g. into a chat.
+        .disable_drag_drop_handler()
         .on_new_window(move |url, _| {
             open_external(&app, &url);
             NewWindowResponse::Deny
@@ -119,13 +177,11 @@ fn open_service(window: &Window, service: &Service) -> tauri::Result<Webview> {
 
     // Each service gets its own cookies and storage, so several accounts of one site can run side by side.
     #[cfg(target_os = "macos")]
-    let builder = builder.data_store_identifier(
-        u128::from_str_radix(&service.id, 16).unwrap_or_default().to_be_bytes(),
-    );
+    let builder = builder.data_store_identifier(store_id(&service.id));
     // shortcut: a data directory per service gives each WebView2 its own browser process on Windows;
     // switch to WebView2 profiles once Tauri exposes them (wry already has with_profile_name).
     #[cfg(not(target_os = "macos"))]
-    let builder = builder.data_directory(window.app_handle().path().app_data_dir()?.join("services").join(&service.id));
+    let builder = builder.data_directory(services_dir(window.app_handle())?.join(&service.id));
     #[cfg(not(windows))]
     let builder = builder.user_agent(USER_AGENT);
 
@@ -143,6 +199,8 @@ fn snapshot(st: &AppState) -> serde_json::Value {
     json!({ "services": services, "active": st.active, "panel": st.panel })
 }
 
+// shortcut: on Linux, child webviews sit in a GTK box and ignore set_bounds, so the sidebar
+// does not get its fixed width there; needs GtkFixed packing before Linux is usable.
 fn layout(window: &Window, panel: bool) -> tauri::Result<()> {
     let size = window.inner_size()?.to_logical::<f64>(window.scale_factor()?);
     for webview in window.webviews() {
@@ -234,8 +292,9 @@ async fn add_service(window: Window, state: Shared<'_>, name: String, url: Strin
     refresh(&window)
 }
 
+// async: closing a webview while WebView2 creates another one deadlocks a synchronous command on Windows.
 #[tauri::command]
-fn remove_service(window: Window, state: Shared<'_>, id: String) -> Result<(), String> {
+async fn remove_service(window: Window, state: Shared<'_>, id: String) -> Result<(), String> {
     {
         let mut st = state.lock().unwrap();
         let next: Vec<_> = st.services.iter().filter(|s| s.id != id).cloned().collect();
@@ -247,7 +306,7 @@ fn remove_service(window: Window, state: Shared<'_>, id: String) -> Result<(), S
         }
     }
     if let Some(webview) = window.get_webview(&label(&id)) {
-        // Log the account out on disk too, not just close it.
+        // Log the account out right away; purge_orphans deletes the files on the next start.
         if let Err(e) = webview.clear_all_browsing_data() {
             eprintln!("rustium: could not clear data of {id}: {e}");
         }
@@ -305,6 +364,7 @@ fn setup(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
         st.active = services.first().map(|s| s.id.clone());
         st.services.clone_from(&services);
     }
+    purge_orphans(&handle);
 
     let window = tauri::window::WindowBuilder::new(app, "main")
         .title("rustium")
@@ -362,6 +422,8 @@ fn setup(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
 
 fn main() {
     tauri::Builder::default()
+        // A second start only shows the running window; two instances would double every notification.
+        .plugin(tauri_plugin_single_instance::init(|app, _, _| show_main(app)))
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_opener::init())
         .manage(Mutex::new(AppState::default()))
@@ -391,5 +453,7 @@ mod tests {
         assert_eq!(unread_count("Inbox (12) - me@example.com - Gmail"), 12);
         assert_eq!(unread_count("Team (Work) (5)"), 5);
         assert_eq!(unread_count("(beta"), 0);
+        assert_eq!(unread_count("Inbox (1,234) - Gmail"), 1234);
+        assert_eq!(unread_count("(99+) Discord"), 99);
     }
 }

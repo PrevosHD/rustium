@@ -1,6 +1,6 @@
 # rustium
 
-> **Proof of concept.** rustium was built out of experimental interest and is **not actively maintained**. Use it at your own risk; issues and pull requests may go unanswered.
+> **Proof of concept.** rustium was built out of experimental interest and is **not actively maintained**. It was vibe-coded with the help of Claude, Anthropic's AI assistant: the code was largely written by AI and has not had a thorough human review. Use it at your own risk; issues and pull requests may go unanswered.
 
 rustium is a proof-of-concept remake of [Ferdium](https://github.com/ferdium/ferdium-app) in Rust. It rebuilds Ferdium's core idea, several web messengers side by side in one window, from scratch with [Tauri 2](https://v2.tauri.app). It contains no Ferdium code and is not affiliated with the Ferdium project.
 
@@ -27,22 +27,23 @@ Requires macOS 14 or later (isolated storage per service needs it), Windows 10 o
 Proof of concept, not actively maintained. Known limits:
 
 - Clicking a notification does not focus the window or switch to the service yet.
-- Downloads, microphone and camera access are not handled yet. Saving files and features that need the microphone or camera (for example voice messages) may not work.
+- Microphone and camera access are not handled yet, so voice messages and taking photos do not work. WhatsApp Web also shows a banner recommending another browser, because rustium presents itself as Safari. Downloads go to the Downloads folder.
+- On Linux the sidebar does not get its fixed width yet (child webviews ignore their position there), so the layout is broken on Linux.
 - On Windows, each service currently gets its own WebView2 browser process, because Tauri does not expose WebView2 profiles yet. RAM use on Windows may therefore not improve compared to Ferdium.
 - On Linux and Windows, rustium cannot disable background throttling of hidden webviews. It still has to be verified that notifications from hidden services arrive reliably there.
 - Prebuilt bundles are not code-signed or notarized yet, so macOS Gatekeeper and Windows SmartScreen warn before the first start.
 
 ## First measurement
 
-macOS 26, the same WhatsApp account open in all three apps, memory as Activity Monitor counts it (physical footprint, summed over each app's processes):
+macOS 26, the same WhatsApp account freshly logged in to all three apps and left idle for a few minutes, memory as Activity Monitor counts it (physical footprint, summed over each app's processes):
 
-| App | Memory |
-|---|---|
-| WhatsApp (official native app) | 235 MB |
-| Ferdium | 1,085 MB (its WhatsApp renderer: about 490 MB) |
-| rustium 0.1.0 | 1,560 MB (its WhatsApp web process: about 1,400 MB) |
+| App | Total | WhatsApp page | The app itself |
+|---|---|---|---|
+| WhatsApp (official native app) | 215 MB | (no web page) | 190 MB |
+| Ferdium | 1,140 MB | 671 MB (Chromium) | about 470 MB |
+| rustium 0.1.0 | 1,408 MB | 1,217 MB (WebKit) | about 190 MB |
 
-In this run rustium used more memory than Ferdium. The rustium shell itself needs about 35 MB, but WebKit's JavaScript heap for WhatsApp Web alone is about 1.1 GB, more than twice what Ferdium's Chromium renderer uses for the same page. rustium had just been linked with a QR code, so the initial message sync may be part of it. So far the experiment shows no memory win on macOS.
+The Rust shell saves about 280 MB because it ships no browser engine of its own. But WebKit needs about 1.8 times as much memory as Chromium for the same WhatsApp Web page, so on macOS rustium ends up about 270 MB heavier than Ferdium. A Windows measurement (where WebView2 is Chromium) is still to come; `scripts/measure-memory.ps1` measures all three apps there.
 
 ## Build from source
 
