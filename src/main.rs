@@ -18,7 +18,7 @@ use tauri::{
     menu::{Menu, MenuItem},
     tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
     utils::config::BackgroundThrottlingPolicy,
-    webview::{NewWindowResponse, WebviewBuilder},
+    webview::{NewWindowResponse, PermissionKind, PermissionResponse, WebviewBuilder},
 };
 use tauri_plugin_notification::NotificationExt;
 use tauri_plugin_opener::OpenerExt;
@@ -161,6 +161,7 @@ fn open_external(app: &AppHandle, url: &Url) {
 fn open_service(window: &Window, service: &Service) -> tauri::Result<Webview> {
     let app = window.app_handle().clone();
     let url: Url = service.url.parse().map_err(|_| tauri::Error::InvalidWebviewUrl("service URL"))?;
+    let host = url.host_str().map(str::to_owned);
     let builder = WebviewBuilder::new(label(&service.id), WebviewUrl::External(url))
         .initialization_script(INJECT)
         // Hidden services must keep running, or their notifications stop.
@@ -170,6 +171,16 @@ fn open_service(window: &Window, service: &Service) -> tauri::Result<Webview> {
         .on_download(|_, _| true)
         // Lets files be dragged into the page, e.g. into a chat.
         .disable_drag_drop_handler()
+        // Microphone and camera (voice messages, calls) go to the service's own site without asking;
+        // any other site the service navigates to gets the web engine's own prompt.
+        .on_permission_request(move |webview, kind| match kind {
+            PermissionKind::Microphone | PermissionKind::Camera
+                if webview.url().ok().as_ref().and_then(Url::host_str) == host.as_deref() =>
+            {
+                PermissionResponse::Allow
+            }
+            _ => PermissionResponse::Default,
+        })
         .on_new_window(move |url, _| {
             open_external(&app, &url);
             NewWindowResponse::Deny
